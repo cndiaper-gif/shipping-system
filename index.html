@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>出货管理系统</title>
-  <style>.status.info { color: #d97706; }
+  <style>
     :root {
       --bg: #f7f8fb;
       --card: #ffffff;
@@ -15,6 +15,7 @@
       --primary-dark: #1d4ed8;
       --danger: #dc2626;
       --success: #059669;
+      --warning: #d97706;
       --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
       --radius: 16px;
     }
@@ -159,6 +160,7 @@
 
     .status.success { color: var(--success); }
     .status.error { color: var(--danger); }
+    .status.info { color: var(--warning); }
 
     .table-wrap {
       overflow: auto;
@@ -372,13 +374,14 @@
 
       <div class="card">
         <h2>出货记录</h2>
-        <div class="actions" style="margin-bottom:16px;">
-  <button type="button" class="btn-secondary" id="downloadTemplateBtn">下载CSV模板</button>
-  <input type="file" id="csvFileInput" accept=".csv" style="display:none;" />
-  <button type="button" class="btn-primary" id="importCsvBtn">导入CSV</button>
-</div>
 
-<div id="importStatus" class="status"></div>
+        <div class="actions" style="margin-bottom:16px;">
+          <button type="button" class="btn-secondary" id="downloadTemplateBtn">下载CSV模板</button>
+          <input type="file" id="csvFileInput" accept=".csv" style="display:none;" />
+          <button type="button" class="btn-primary" id="importCsvBtn">导入CSV</button>
+        </div>
+
+        <div id="importStatus" class="status"></div>
 
         <div class="toolbar">
           <div>
@@ -457,9 +460,9 @@
 
     const form = document.getElementById('shipmentForm');
     const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
-const importCsvBtn = document.getElementById('importCsvBtn');
-const csvFileInput = document.getElementById('csvFileInput');
-const importStatus = document.getElementById('importStatus');
+    const importCsvBtn = document.getElementById('importCsvBtn');
+    const csvFileInput = document.getElementById('csvFileInput');
+    const importStatus = document.getElementById('importStatus');
     const formTitle = document.getElementById('formTitle');
     const submitBtn = document.getElementById('submitBtn');
     const resetBtn = document.getElementById('resetBtn');
@@ -492,6 +495,11 @@ const importStatus = document.getElementById('importStatus');
     function setStatus(message, type = 'success') {
       formStatus.className = 'status ' + type;
       formStatus.textContent = message;
+    }
+
+    function setImportStatus(message, type = 'success') {
+      importStatus.className = 'status ' + type;
+      importStatus.textContent = message;
     }
 
     function resetForm() {
@@ -599,6 +607,210 @@ const importStatus = document.getElementById('importStatus');
       });
     }
 
+    function downloadCsvTemplate() {
+      const header = [
+        'customerName',
+        'salesName',
+        'orderNo',
+        'containerType',
+        'containerQty',
+        'blNo',
+        'etd',
+        'eta',
+        'port',
+        'freight',
+        'otherCost',
+        'customsAmount',
+        'receivedAmount',
+        'pendingAmount',
+        'year',
+        'month',
+        'remarks'
+      ];
+
+      const sample1 = [
+        'ABC Company',
+        'Julie',
+        'SO-001',
+        '40HQ',
+        '2',
+        'BL123456',
+        '2026-03-20',
+        '2026-04-15',
+        'Xiamen',
+        '2500',
+        '120',
+        '30000',
+        '10000',
+        '20000',
+        '2026',
+        'March',
+        'first shipment'
+      ];
+
+      const sample2 = [
+        'XYZ Trading',
+        'Hosen',
+        'SO-002',
+        '20GP',
+        '1',
+        'BL789000',
+        '2026-03-25',
+        '2026-04-18',
+        'Shanghai',
+        '1800',
+        '80',
+        '15000',
+        '5000',
+        '10000',
+        '2026',
+        'March',
+        'sample order'
+      ];
+
+      const csvContent = [
+        header.join(','),
+        sample1.join(','),
+        sample2.join(',')
+      ].join('\n');
+
+      const blob = new Blob(["\uFEFF" + csvContent], {
+        type: 'text/csv;charset=utf-8;'
+      });
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'shipping-template.csv';
+      link.click();
+    }
+
+    function parseCsvLine(line) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const next = line[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && next === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+
+      result.push(current.trim());
+      return result;
+    }
+
+    function toNumberOrEmpty(value) {
+      if (value === undefined || value === null || value === '') return '';
+      const num = Number(value);
+      return Number.isNaN(num) ? '' : num;
+    }
+
+    async function importCsvFile(file) {
+      if (!file) return;
+
+      setImportStatus('正在导入，请稍候...', 'info');
+
+      const text = await file.text();
+      const lines = text
+        .replace(/^\uFEFF/, '')
+        .split(/\r?\n/)
+        .filter(line => line.trim() !== '');
+
+      if (lines.length < 2) {
+        setImportStatus('CSV 文件没有可导入的数据。', 'error');
+        return;
+      }
+
+      const headers = parseCsvLine(lines[0]);
+      const expectedHeaders = [
+        'customerName',
+        'salesName',
+        'orderNo',
+        'containerType',
+        'containerQty',
+        'blNo',
+        'etd',
+        'eta',
+        'port',
+        'freight',
+        'otherCost',
+        'customsAmount',
+        'receivedAmount',
+        'pendingAmount',
+        'year',
+        'month',
+        'remarks'
+      ];
+
+      const headerOk = expectedHeaders.every((h, i) => headers[i] === h);
+      if (!headerOk) {
+        setImportStatus('CSV 表头不正确，请先下载模板再填写。', 'error');
+        return;
+      }
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        try {
+          const cols = parseCsvLine(lines[i]);
+          if (cols.every(v => !v)) continue;
+
+          const row = Object.fromEntries(
+            headers.map((h, idx) => [h, cols[idx] ?? ''])
+          );
+
+          const data = {
+            customerName: row.customerName || '',
+            salesName: row.salesName || '',
+            orderNo: row.orderNo || '',
+            containerType: row.containerType || '',
+            containerQty: toNumberOrEmpty(row.containerQty),
+            blNo: row.blNo || '',
+            etd: row.etd || '',
+            eta: row.eta || '',
+            port: row.port || '',
+            freight: toNumberOrEmpty(row.freight),
+            otherCost: toNumberOrEmpty(row.otherCost),
+            customsAmount: toNumberOrEmpty(row.customsAmount),
+            receivedAmount: toNumberOrEmpty(row.receivedAmount),
+            pendingAmount: toNumberOrEmpty(row.pendingAmount),
+            year: row.year || '',
+            month: row.month || '',
+            remarks: row.remarks || '',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          };
+
+          if (!data.customerName && !data.orderNo) continue;
+
+          await addDoc(shipmentsRef, data);
+          successCount++;
+        } catch (error) {
+          console.error('Import row failed:', i + 1, error);
+          failCount++;
+        }
+      }
+
+      setImportStatus(
+        `导入完成：成功 ${successCount} 条，失败 ${failCount} 条。`,
+        failCount ? 'info' : 'success'
+      );
+    }
+
     populateSelect(document.getElementById('year'), years);
     populateSelect(document.getElementById('month'), months);
     populateSelect(filterYear, years, true);
@@ -651,6 +863,18 @@ const importStatus = document.getElementById('importStatus');
       filterYear.value = '';
       filterMonth.value = '';
       renderTable();
+    });
+
+    downloadTemplateBtn.addEventListener('click', downloadCsvTemplate);
+
+    importCsvBtn.addEventListener('click', () => {
+      csvFileInput.click();
+    });
+
+    csvFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      await importCsvFile(file);
+      csvFileInput.value = '';
     });
 
     onSnapshot(query(shipmentsRef, orderBy('updatedAt', 'desc')), (snapshot) => {
