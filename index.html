@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shipping Management System</title>
+  <style>
+    :root {
+      --bg: #f7f8fb; --card: #ffffff; --text: #1f2937; --muted: #6b7280; --line: #e5e7eb;
+      --primary: #2563eb; --primary-dark: #1d4ed8; --danger: #dc2626; --success: #059669; --warning: #d97706;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08); --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--bg); color: var(--text); }
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    .header { margin-bottom: 18px; }
+    .header h1 { margin: 0 0 8px; font-size: 30px; }
+    .header p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .notice { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 14px 16px; border-radius: 12px; margin: 16px 0 24px; line-height: 1.5; }
+    .grid { display: grid; grid-template-columns: 1.1fr 1.2fr; gap: 20px; align-items: start; }
+    .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; }
+    .card h2 { margin: 0 0 16px; font-size: 22px; }
+    form .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .full { grid-column: 1 / -1; }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+    input, select, textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; outline: none; background: #fff; }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); }
+    textarea { min-height: 90px; resize: vertical; }
+    .actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    button { border: 0; border-radius: 10px; padding: 11px 16px; cursor: pointer; font-size: 14px; font-weight: 700; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #e5e7eb; color: #111827; }
+    .toolbar { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; margin-bottom: 14px; }
+    .toolbar > div { min-width: 160px; flex: 0 1 180px; }
+    .status { font-size: 14px; margin-top: 10px; min-height: 20px; }
+    .status.success { color: var(--success); } .status.error { color: var(--danger); } .status.info { color: var(--warning); }
+    .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 14px; }
+    table { width: 100%; border-collapse: collapse; min-width: 1450px; background: white; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px 8px; text-align: left; vertical-align: top; font-size: 13px; }
+    th { background: #f9fafb; position: sticky; top: 0; z-index: 1; }
+    tr:hover td { background: #fcfcfd; }
+    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-small { padding: 7px 10px; font-size: 12px; font-weight: 700; }
+    .btn-edit { background: #dbeafe; color: #1d4ed8; }
+    .btn-delete { background: #fee2e2; color: #b91c1c; }
+    .pill { display: inline-block; background: #eef2ff; color: #4338ca; border-radius: 999px; padding: 4px 8px; font-size: 12px; font-weight: 700; }
+    .footer-note { color: var(--muted); margin-top: 14px; font-size: 13px; line-height: 1.5; }
+    @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+    @media (max-width: 720px) { form .form-grid { grid-template-columns: 1fr; } .container { padding: 14px; } .card { padding: 16px; } .header h1 { font-size: 24px; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Shipping Management System</h1>
+      <p>Employees can open this page, fill in shipment details, and save. Everyone will see the latest saved version in real time.</p>
+    </div>
+    <div class="notice">
+      Before using this on GitHub Pages, create a Firebase project and fill in <strong>firebase-config.js</strong>.
+      This system cannot sync shared live data with GitHub Pages alone; Firebase is used for real-time saving.
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h2 id="formTitle">Add Shipment</h2>
+        <form id="shipmentForm">
+          <div class="form-grid">
+            <div><label for="customerName">Customer Name</label><input id="customerName" name="customerName" required /></div>
+            <div><label for="salesName">Sales Name</label><input id="salesName" name="salesName" required /></div>
+            <div><label for="orderNo">Order No.</label><input id="orderNo" name="orderNo" required /></div>
+            <div><label for="containerType">Container Type</label><select id="containerType" name="containerType"><option value="">Select</option><option>20GP</option><option>40GP</option><option>40HQ</option><option>45HQ</option><option>LCL</option></select></div>
+            <div><label for="containerQty">How Many Containers</label><input id="containerQty" name="containerQty" type="number" min="0" step="1" /></div>
+            <div><label for="blNo">B/L No.</label><input id="blNo" name="blNo" /></div>
+            <div><label for="etd">ETD</label><input id="etd" name="etd" type="date" /></div>
+            <div><label for="eta">ETA</label><input id="eta" name="eta" type="date" /></div>
+            <div><label for="port">Port</label><input id="port" name="port" /></div>
+            <div><label for="freight">Freight</label><input id="freight" name="freight" type="number" min="0" step="0.01" /></div>
+            <div><label for="otherCost">Other Cost</label><input id="otherCost" name="otherCost" type="number" min="0" step="0.01" /></div>
+            <div><label for="customsAmount">Customs Amount</label><input id="customsAmount" name="customsAmount" type="number" min="0" step="0.01" /></div>
+            <div><label for="receivedAmount">Received Amount</label><input id="receivedAmount" name="receivedAmount" type="number" min="0" step="0.01" /></div>
+            <div><label for="pendingAmount">Pending Amount</label><input id="pendingAmount" name="pendingAmount" type="number" min="0" step="0.01" /></div>
+            <div><label for="year">Year</label><select id="year" name="year" required></select></div>
+            <div><label for="month">Month</label><select id="month" name="month" required></select></div>
+            <div class="full"><label for="remarks">Remarks</label><textarea id="remarks" name="remarks" placeholder="Optional remarks"></textarea></div>
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn-primary" id="submitBtn">Save Shipment</button>
+            <button type="button" class="btn-secondary" id="resetBtn">Reset</button>
+          </div>
+          <div id="formStatus" class="status"></div>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Shipment Records</h2>
+        <div class="toolbar">
+          <div><label for="filterYear">Filter Year</label><select id="filterYear"></select></div>
+          <div><label for="filterMonth">Filter Month</label><select id="filterMonth"></select></div>
+          <div><label>&nbsp;</label><button type="button" class="btn-secondary" id="clearFilters">Clear Filters</button></div>
+          <div style="margin-left:auto; min-width: auto;"><label>&nbsp;</label><span class="pill" id="recordCount">0 records</span></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Customer</th><th>Sales</th><th>Order No.</th><th>Container</th><th>Qty</th><th>B/L No.</th><th>ETD</th><th>ETA</th><th>Port</th><th>Freight</th><th>Other Cost</th><th>Customs Amount</th><th>Received</th><th>Pending</th><th>Year</th><th>Month</th><th>Remarks</th><th>Updated</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="recordsBody"><tr><td colspan="19">Loading...</td></tr></tbody>
+          </table>
+        </div>
+        <div class="footer-note">Recommended workflow: add one row for each shipment. To update any shipment, click <strong>Edit</strong>, modify the form, then click <strong>Update Shipment</strong>.</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { firebaseApp } from './firebase-config.js';
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const db = getFirestore(firebaseApp);
+    const shipmentsRef = collection(db, 'shipments');
+
+    const years = ['2025', '2026', '2027', '2028', '2029', '2030'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const form = document.getElementById('shipmentForm');
+    const formTitle = document.getElementById('formTitle');
+    const submitBtn = document.getElementById('submitBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const formStatus = document.getElementById('formStatus');
+    const recordsBody = document.getElementById('recordsBody');
+    const recordCount = document.getElementById('recordCount');
+    const filterYear = document.getElementById('filterYear');
+    const filterMonth = document.getElementById('filterMonth');
+    const clearFilters = document.getElementById('clearFilters');
+
+    let editingId = null;
+    let allRecords = [];
+
+    function moneyValue(v) { if (v === '' || v === null || typeof v === 'undefined') return ''; const num = Number(v); return Number.isNaN(num) ? '' : num; }
+    function populateSelect(select, values, withAll = false) {
+      select.innerHTML = '';
+      if (withAll) { const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'All'; select.appendChild(opt); }
+      values.forEach(v => { const opt = document.createElement('option'); opt.value = v; opt.textContent = v; select.appendChild(opt); });
+    }
+    populateSelect(document.getElementById('year'), years);
+    populateSelect(filterYear, years, true);
+    populateSelect(document.getElementById('month'), months);
+    populateSelect(filterMonth, months, true);
+    document.getElementById('year').value = '2026';
+
+    function setStatus(message, type = 'info') { formStatus.className = 'status ' + type; formStatus.textContent = message; }
+    function clearStatus() { formStatus.className = 'status'; formStatus.textContent = ''; }
+    function resetForm() { form.reset(); document.getElementById('year').value = '2026'; editingId = null; formTitle.textContent = 'Add Shipment'; submitBtn.textContent = 'Save Shipment'; clearStatus(); }
+    function formatUpdatedAt(ts) { if (!ts || !ts.seconds) return ''; return new Date(ts.seconds * 1000).toLocaleString(); }
+    function escapeHtml(str = '') { return String(str).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;'); }
+
+    function fillForm(record) {
+      for (const [key, value] of Object.entries(record)) {
+        const el = form.elements[key];
+        if (el && typeof value !== 'undefined' && value !== null) el.value = value;
+      }
+      editingId = record.id;
+      formTitle.textContent = 'Edit Shipment';
+      submitBtn.textContent = 'Update Shipment';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setStatus('Editing shipment: ' + record.orderNo, 'info');
+    }
+
+    function renderTable() {
+      const fy = filterYear.value;
+      const fm = filterMonth.value;
+      const filtered = allRecords.filter(item => (!fy || item.year === fy) && (!fm || item.month === fm));
+      recordCount.textContent = filtered.length + ' record' + (filtered.length === 1 ? '' : 's');
+      if (!filtered.length) { recordsBody.innerHTML = '<tr><td colspan="19">No records found.</td></tr>'; return; }
+
+      recordsBody.innerHTML = filtered.map(item => `
+        <tr>
+          <td>${escapeHtml(item.customerName)}</td>
+          <td>${escapeHtml(item.salesName)}</td>
+          <td>${escapeHtml(item.orderNo)}</td>
+          <td>${escapeHtml(item.containerType)}</td>
+          <td>${escapeHtml(item.containerQty)}</td>
+          <td>${escapeHtml(item.blNo)}</td>
+          <td>${escapeHtml(item.etd || '')}</td>
+          <td>${escapeHtml(item.eta || '')}</td>
+          <td>${escapeHtml(item.port)}</td>
+          <td>${escapeHtml(item.freight)}</td>
+          <td>${escapeHtml(item.otherCost)}</td>
+          <td>${escapeHtml(item.customsAmount)}</td>
+          <td>${escapeHtml(item.receivedAmount)}</td>
+          <td>${escapeHtml(item.pendingAmount)}</td>
+          <td>${escapeHtml(item.year)}</td>
+          <td>${escapeHtml(item.month)}</td>
+          <td>${escapeHtml(item.remarks || '')}</td>
+          <td>${escapeHtml(formatUpdatedAt(item.updatedAt))}</td>
+          <td><div class="row-actions"><button type="button" class="btn-small btn-edit" data-edit="${item.id}">Edit</button><button type="button" class="btn-small btn-delete" data-delete="${item.id}">Delete</button></div></td>
+        </tr>`).join('');
+
+      recordsBody.querySelectorAll('[data-edit]').forEach(btn => btn.addEventListener('click', () => {
+        const target = allRecords.find(r => r.id === btn.dataset.edit);
+        if (target) fillForm(target);
+      }));
+
+      recordsBody.querySelectorAll('[data-delete]').forEach(btn => btn.addEventListener('click', async () => {
+        const id = btn.dataset.delete;
+        if (!confirm('Delete this shipment record?')) return;
+        try {
+          await deleteDoc(doc(db, 'shipments', id));
+          setStatus('Shipment deleted.', 'success');
+          if (editingId === id) resetForm();
+        } catch (error) {
+          console.error(error);
+          setStatus('Delete failed: ' + error.message, 'error');
+        }
+      }));
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearStatus();
+      const data = {
+        customerName: form.customerName.value.trim(),
+        salesName: form.salesName.value.trim(),
+        orderNo: form.orderNo.value.trim(),
+        containerType: form.containerType.value,
+        containerQty: form.containerQty.value ? Number(form.containerQty.value) : '',
+        blNo: form.blNo.value.trim(),
+        etd: form.etd.value,
+        eta: form.eta.value,
+        port: form.port.value.trim(),
+        freight: moneyValue(form.freight.value),
+        otherCost: moneyValue(form.otherCost.value),
+        customsAmount: moneyValue(form.customsAmount.value),
+        receivedAmount: moneyValue(form.receivedAmount.value),
+        pendingAmount: moneyValue(form.pendingAmount.value),
+        year: form.year.value,
+        month: form.month.value,
+        remarks: form.remarks.value.trim(),
+        updatedAt: serverTimestamp()
+      };
+      try {
+        if (editingId) {
+          await updateDoc(doc(db, 'shipments', editingId), data);
+          setStatus('Shipment updated successfully.', 'success');
+        } else {
+          data.createdAt = serverTimestamp();
+          await addDoc(shipmentsRef, data);
+          setStatus('Shipment saved successfully.', 'success');
+        }
+        resetForm();
+      } catch (error) {
+        console.error(error);
+        setStatus('Save failed: ' + error.message, 'error');
+      }
+    });
+
+    resetBtn.addEventListener('click', resetForm);
+    clearFilters.addEventListener('click', () => { filterYear.value = ''; filterMonth.value = ''; renderTable(); });
+    filterYear.addEventListener('change', renderTable);
+    filterMonth.addEventListener('change', renderTable);
+
+    onSnapshot(query(shipmentsRef, orderBy('updatedAt', 'desc')), (snapshot) => {
+      allRecords = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderTable();
+    }, (error) => {
+      console.error(error);
+      recordsBody.innerHTML = '<tr><td colspan="19">Failed to load data: ' + escapeHtml(error.message) + '</td></tr>';
+    });
+  </script>
+</body>
+</html>
